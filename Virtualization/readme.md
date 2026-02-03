@@ -1,173 +1,159 @@
-# 🖥️ First Secure Server Setup (Debian)
+#  First Secure Server Setup (Debian)
+This document describes step by step the complete configuration of a secure Linux server, compliant with the project requirements:
+system, users, SSH, firewall, password policy, sudo, monitoring script, and service deployment.
 
-Ce document décrit **pas à pas** la configuration complète d’un serveur Linux sécurisé, conforme aux exigences du projet :  
-système, utilisateurs, SSH, firewall, politique de mots de passe, sudo, script de monitoring et déploiement d’un service.
+##  System Installation
 
----
+OS Choice
 
-## 1️⃣ Installation du système
+==>Debian Stable (latest)
+==>Minimal installation (no graphical interface)
 
-### Choix de l’OS
-- **Debian Stable (latest)**  
-- Installation minimale (sans interface graphique)
+## Hostname Configuration
 
-> 💡 Debian est stable, sécurisé et recommandé pour débuter en administration système.
+sudo hostnamectl set-hostname myname
+==> Verification:  hostname
 
----
-
-## 2️⃣ Configuration du hostname
-
-### Objectif
-Le hostname doit suivre le format :
-Firstname.Lastname-CC
-
-
-### Commandes
+##  System Update
 ```bash
-sudo hostnamectl set-hostname Issam.Doby-CC
-
-
-Vérification :
-
-hostname
-
-3️⃣ Mise à jour du système
 sudo apt update && sudo apt upgrade -y
+```
+## Non-root User Creation
+```bash
+sudo adduser new-name
+```
+Add the user to the sudo group:
+```bash
+sudo usermod -aG sudo new-name
+```
 
-4️⃣ Création de l’utilisateur non-root
-Objectif
+Verification
+```bash
+groups new-name
+```
+## Secure SSH Configuration
 
-Créer un utilisateur correspondant au hostname sans -CC.
-
-sudo adduser Issam.Doby
-
-
-Ajouter au groupe sudo :
-
-sudo usermod -aG sudo Issam.Doby
-
-
-Vérification :
-
-groups Issam.Doby
-
-5️⃣ Configuration SSH sécurisée
-Installation SSH
+Install SSH :
+```bash
 sudo apt install openssh-server -y
+```
 
 Configuration
-
-Éditer le fichier :
-
+Edit the file:
+```bash
 sudo nano /etc/ssh/sshd_config
+```
 
-
-Modifier / ajouter :
-
+Modify :
+```bash
 Port 1111
 PermitRootLogin no
 PasswordAuthentication yes
+```
 
-
-Redémarrer SSH :
-
+Restart SSH:
+```bash
 sudo systemctl restart ssh
+```
 
-
-Vérification :
-
+Verification
+```bash
 ss -tulnp | grep 1111
+```
+6️⃣ Firewall Configuration (UFW)
 
-6️⃣ Configuration du Firewall (UFW)
 Installation
+```bash
 sudo apt install ufw -y
+```
 
-Règles
+Rules
+```bash
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow 1111/tcp
 sudo ufw enable
+```
 
-
-Vérification :
-
+Verification
+```bash
 sudo ufw status
+```
+## Strong Password Policy
 
-7️⃣ Politique de mots de passe forte
-Objectifs
+### Objectives
+Expiration: 30 days
+Minimum change interval: 2 days
+Warning: 7 days
+Length ≥ 10 characters
+Uppercase + lowercase + number
+No more than 3 identical consecutive characters
+Must not contain the username
+7 characters different from the previous password
 
-Expiration : 30 jours
-
-Changement minimum : 2 jours
-
-Alerte : 7 jours
-
-Longueur ≥ 10 caractères
-
-Majuscule + minuscule + chiffre
-
-Pas plus de 3 caractères identiques consécutifs
-
-Ne pas contenir le nom de l’utilisateur
-
-7 caractères différents de l’ancien mot de passe
-
-Configuration de login.defs
+login.defs Configuration
+```bash
 sudo nano /etc/login.defs
+```
 
-
-Modifier :
-
+Modify:
+```bash
 PASS_MAX_DAYS 30
 PASS_MIN_DAYS 2
 PASS_WARN_AGE 7
+```
 
-Configuration PAM
+### PAM Configuration 
+is how Linux decides who is allowed to log in, how they authenticate, and under what rules (password strength, expiration, retries, etc.).
 
-Installer le module :
-
+Install the module:
+```bash
 sudo apt install libpam-pwquality -y
-
-
-Modifier :
-
+```
+Edit:
+```bash
 sudo nano /etc/pam.d/common-password
+```
 
-
-Remplacer la ligne par :
-
+Replace the line with:
+```bash
 password requisite pam_pwquality.so retry=3 minlen=10 ucredit=-1 lcredit=-1 dcredit=-1 maxrepeat=3 usercheck=1 difok=7
+```
+## Secure sudo Configuration
 
-8️⃣ Configuration sécurisée de sudo
-Objectifs
+Objectives
+Maximum 3 attempts
+Custom error message
+Full logging (input/output)
 
-3 tentatives max
-
-Message d’erreur personnalisé
-
-Logs complets (input/output)
-
-Création du dossier de logs
+Create log directory
+```bash
 sudo mkdir /var/log/sudo
 sudo chmod 700 /var/log/sudo
+```
 
-Configuration sudoers
+sudoers Configuration
+```bash
 sudo visudo
+```
 
-
-Ajouter :
+Add:
 
 Defaults passwd_tries=3
-Defaults badpass_message="⚠️ Accès refusé : mot de passe incorrect"
+Defaults badpass_message="⚠️ Access denied: incorrect password"
 Defaults logfile="/var/log/sudo/sudo.log"
 Defaults log_input
 Defaults log_output
 
-9️⃣ Script de monitoring (monitoring.sh)
-Création du script
-sudo nano /usr/local/bin/monitoring.sh
+## Monitoring Script (monitoring.sh)
 
-Contenu
+Script creation
+```bash
+sudo nano /usr/local/bin/monitoring.sh
+```
+
+Content
+```bash
 #!/bin/bash
 
 ARCH=$(uname -a)
@@ -197,73 +183,80 @@ wall << EOF
 #Sudo : $SUDO cmd
 Your Server your rules !
 EOF
+```
 
 Permissions
+```bash
 sudo chmod +x /usr/local/bin/monitoring.sh
+```
+🔟 Cron Configuration
 
-🔟 Configuration Cron
-Éditer la crontab root
+Edit root crontab:
+```bash
 sudo crontab -e
+```
 
-
-Ajouter :
-
+Add:
+```bash
 @reboot /usr/local/bin/monitoring.sh
 */10 * * * * /usr/local/bin/monitoring.sh
+```
+## Service Deployment: Nginx
 
-1️⃣1️⃣ Déploiement d’un service : Nginx
 Installation
+```bash
 sudo apt install nginx -y
+```
 
-Gestion du service
+Service management
+```bash
 sudo systemctl start nginx
 sudo systemctl stop nginx
 sudo systemctl restart nginx
 sudo systemctl status nginx
+```
 
 Test
+```bash
 curl localhost
+```
 
-
-Résultat attendu :
+Expected result
 
 Welcome to nginx!
 
 
-📌 Accessibilité :
+📌 Accessibility
+Accessible only from inside the VM (port 80 not opened in UFW).
 
-Accessible uniquement depuis la VM (port 80 non ouvert dans UFW)
+📝 Challenges Encountered
 
-📝 Difficultés rencontrées
+PAM configuration was tricky → solved using official documentation
 
-Configuration PAM délicate → résolue via documentation officielle
+sudo log permissions → fixed with chmod 700
 
-Permissions sudo logs → corrigées avec chmod 700
+Monitoring script errors → removed by properly handling command outputs
 
-Script monitoring → suppression des erreurs en redirigeant les sorties
+✅ Final Checklist
 
-✅ Checklist finale
+Debian Stable
 
- Debian Stable
+Correct hostname
 
- Hostname conforme
+SSH on port 1111, root login disabled
 
- SSH port 1111, root interdit
+Firewall configured
 
- Firewall configuré
+Non-root user created
 
- Utilisateur non-root créé
+Strong password policy enforced
 
- Politique de mots de passe forte
+Secure and logged sudo
 
- Sudo sécurisé et loggé
+monitoring.sh working
 
- monitoring.sh fonctionnel
+Cron active
 
- Cron actif
+Service deployed
 
- Service déployé
-
-🎉 Serveur prêt — sécurisé, monitoré et conforme aux standards professionnels.
-
-
+🎉 Server ready — secure, monitored, and compliant with professional standards.
