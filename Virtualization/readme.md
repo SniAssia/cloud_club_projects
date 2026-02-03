@@ -32,7 +32,7 @@ Verification
 groups new-name
 ```
 ## Secure SSH Configuration
-
+In virtualized environments, SSH is used to securely access and manage virtual machines remotely, allowing administrators to control headless servers without physical access or a graphical interface.
 Install SSH :
 ```bash
 sudo apt install openssh-server -y
@@ -60,8 +60,8 @@ Verification
 ```bash
 ss -tulnp | grep 1111
 ```
-6️⃣ Firewall Configuration (UFW)
-
+## Firewall Configuration (UFW)
+A firewall is a security system that controls which network connections are allowed to reach the server. In this project, UFW (Uncomplicated Firewall) is configured to block all incoming traffic by default and only allow SSH on port 1111. This ensures that the server is protected from unauthorized access while still permitting secure remote administration via SSH. Outgoing connections are allowed, so the server can access the internet for updates or service requests, but no other service can be reached from outside unless explicitly permitted: 
 Installation
 ```bash
 sudo apt install ufw -y
@@ -120,7 +120,7 @@ Replace the line with:
 password requisite pam_pwquality.so retry=3 minlen=10 ucredit=-1 lcredit=-1 dcredit=-1 maxrepeat=3 usercheck=1 difok=7
 ```
 ## Secure sudo Configuration
-
+Sudo is a program that allows a normal user to run commands as root (or another user) without logging in as root. 
 Objectives
 Maximum 3 attempts
 Custom error message
@@ -136,14 +136,6 @@ sudoers Configuration
 ```bash
 sudo visudo
 ```
-
-Add:
-
-Defaults passwd_tries=3
-Defaults badpass_message="⚠️ Access denied: incorrect password"
-Defaults logfile="/var/log/sudo/sudo.log"
-Defaults log_input
-Defaults log_output
 
 ## Monitoring Script (monitoring.sh)
 
@@ -189,7 +181,9 @@ Permissions
 ```bash
 sudo chmod +x /usr/local/bin/monitoring.sh
 ```
-🔟 Cron Configuration
+## Cron Configuration
+Cron is a Linux utility that allows you to schedule tasks to run automatically at specific times or intervals.
+Here, cron is used to run the monitoring script automatically so you don’t have to execute it manually.
 
 Edit root crontab:
 ```bash
@@ -202,6 +196,7 @@ Add:
 */10 * * * * /usr/local/bin/monitoring.sh
 ```
 ## Service Deployment: Nginx
+Nginx is used to deploy a simple web service that serves a basic web page (“Welcome to nginx!”), simulating a real server. It allows you to practice service management by starting, stopping, restarting, and checking the status of Nginx, as well as testing connectivity using commands like curl localhost to verify the server is running. This demonstrates that the VM is not only securely configured but also capable of running services, just like a production server.
 
 Installation
 ```bash
@@ -227,36 +222,4 @@ Welcome to nginx!
 
 
 📌 Accessibility
-Accessible only from inside the VM (port 80 not opened in UFW).
-
-📝 Challenges Encountered
-
-PAM configuration was tricky → solved using official documentation
-
-sudo log permissions → fixed with chmod 700
-
-Monitoring script errors → removed by properly handling command outputs
-
-✅ Final Checklist
-
-Debian Stable
-
-Correct hostname
-
-SSH on port 1111, root login disabled
-
-Firewall configured
-
-Non-root user created
-
-Strong password policy enforced
-
-Secure and logged sudo
-
-monitoring.sh working
-
-Cron active
-
-Service deployed
-
-🎉 Server ready — secure, monitored, and compliant with professional standards.
+Accessible only from inside the VM (because port 80 not opened in UFW).
