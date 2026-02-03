@@ -267,11 +267,3 @@ Script monitoring → suppression des erreurs en redirigeant les sorties
 🎉 Serveur prêt — sécurisé, monitoré et conforme aux standards professionnels.
 
 
----
-
-Si tu veux, je peux aussi :
-- 🔍 **vérifier ton serveur point par point**
-- 🧪 **simuler les tests de soutenance**
-- 🧾 **te préparer une fiche “questions / réponses examinateur”**
-
-Dis-moi 👍
